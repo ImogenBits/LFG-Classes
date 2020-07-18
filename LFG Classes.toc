@@ -1,0 +1,6 @@
+## Interface: 80300
+## Title: LFG Classes
+## Author: ImogenBits
+## SavedVariables: LFGClassesVar
+
+main.lua
