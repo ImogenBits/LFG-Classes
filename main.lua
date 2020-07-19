@@ -125,6 +125,49 @@ local function assignClass(displayData, player, class)
 
 end
 
+local function assignDoouble(displayData, player1, player2, class1, class2)
+	if player1.isAssigned or player2.isAssigned then
+		error("tried to assign player that was already assigned")
+	end
+	player.isAssigned = true
+	hasAssigned = true
+
+	displayData[player1.role] = displayData[player1.role] - 1
+	for _, tbl in pairs(displayData.freeClasses) do
+		if tbl.potentialRoles[player1.role] then
+			tbl.potentialRoles[player1.role] = tbl.potentialRoles[player1.role] - 1
+			if tbl.potentialRoles[player1.role] == 0 then
+				tbl.potentialRoles[player1.role] = nil
+				tbl.potentialRoles.num = tbl.potentialRoles.num - 1
+			end
+		end
+	end
+	displayData[player2.role] = displayData[player2.role] - 1
+	for _, tbl in pairs(displayData.freeClasses) do
+		if tbl.potentialRoles[player2.role] then
+			tbl.potentialRoles[player2.role] = tbl.potentialRoles[player2.role] - 1
+			if tbl.potentialRoles[player2.role] == 0 then
+				tbl.potentialRoles[player2.role] = nil
+				tbl.potentialRoles.num = tbl.potentialRoles.num - 1
+			end
+		end
+	end
+
+	player.assignedClass = class
+	player.icons.class = ICONS[class]
+	displayData[class] = displayData[class] - 1
+	for _, currPlayer in ipairs(displayData.players) do
+		if not currPlayer.isAssigned then 
+			currPlayer.potentialClasses[class] = player.potentialClasses[class] - 1
+			if currPlayer.potentialClasses[class] == 0 then
+				currPlayer.potentialClasses[class] = nil
+				currPlayer.potentialClasses.num = currPlayer.potentialClasses.num - 1
+			end
+		end
+	end
+	
+end
+
 local function sort(players)
 	local newPlayers = {}
 	for i, role in ipairs(ROLES) do
