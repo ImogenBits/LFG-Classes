@@ -6,6 +6,7 @@ local CLASS_ICON_SIZE = 12
 local ICON_GROUP_SIZE = 2 * CLASS_ICON_SIZE
 
 local ICONS = LFG_LIST_GROUP_DATA_ATLASES
+local ROLES = LFG_LIST_GROUP_DATA_ROLE_ORDER
 
 local DPS_CLASSES = {
 	ROGUE = true,
@@ -27,65 +28,106 @@ local MULTI_CLASSES = {
 	MONK = true,
 	DRUID = true
 }
+local CLASSES_BY_ROLE = {
+	TANK = {
+		PALADIN = true,
+		MONK = true,
+		DRUID = true,
+		WARRIOR = true,
+		DEATHKNIGHT = true,
+		DEMONHUNTER = true,
+	},
+	HEALER = {
+		PRIEST = true,
+		SHAMAN = true,
+		PALADIN = true,
+		MONK = true,
+		DRUID = true,
+	},
+	DAMAGER = {
+		ROGUE = true,
+		MAGE = true,
+		WARLOCK = true,
+		HUNTER = true,
+		WARRIOR = true,
+		DEATHKNIGHT = true,
+		DEMONHUNTER = true,
+		PRIEST = true,
+		SHAMAN = true,
+		PALADIN = true,
+		MONK = true,
+		DRUID = true
+	}
+}
+local ALL_CLASSES = {
+	ROGUE = {DAMAGER = true},
+	MAGE = {DAMAGER = true},
+	WARLOCK = {DAMAGER = true},
+	HUNTER = {DAMAGER = true},
+	WARRIOR = {TANK = true, DAMAGER = true},
+	DEATHKNIGHT = {TANK = true, DAMAGER = true},
+	DEMONHUNTER = {TANK = true, DAMAGER = true},
+	PRIEST = {HEALER = true, DAMAGER = true},
+	SHAMAN = {HEALER = true, DAMAGER = true},
+	PALADIN = {TANK = true, HEALER = true, DAMAGER = true},
+	MONK = {TANK = true, HEALER = true, DAMAGER = true},
+	DRUID = {TANK = true, HEALER = true, DAMAGER = true},
+}
 
 
-
-local function getIconListOLD(numPlayers, displayData, iconOrder)
-	local iconList = {}
-
-	for i = 1, #iconOrder do
-		for j = 1, displayData[iconOrder[i]] do
-			table.insert(iconList, LFG_LIST_GROUP_DATA_ATLASES[iconOrder[i]])
-		end
+local function copyTable(tbl)
+	local newTable = {}
+	for k, v in tbl do
+		newTable[k] = v
 	end
-	
-	return iconList
+	return newTable
 end
 
-local function enumerateUpdateOLD(self, numPlayers, displayData, disabled, iconOrder)
-	
-	--Show/hide the required icons
-	for i=1, #self.Icons do
-		if ( i > numPlayers ) then
-			self.Icons[i]:Hide();
-		else
-			self.Icons[i]:Show();
-			self.Icons[i]:SetDesaturated(disabled);
-			self.Icons[i]:SetAlpha(disabled and 0.5 or 1.0);
+local function tableSize(tbl)
+	local num = 0
+	for _, _ in pairs(tbl) do
+		num = num + 1
+	end
+	return num
+end
+
+local hasAssigned = false
+local function assignClass(displayData, player, class)
+	if player.isAssigned then
+		error("tried to assign player that was already assigned")
+	end
+	player.isAssigned = true
+	hasAssigned = true
+
+	displayData[player.role] = displayData[player.role] - 1
+	for _, tbl in pairs(displayData.freeClasses) do
+		if tbl.potentialRoles[player.role] then
+			tbl.potentialRoles[player.role] = tbl.potentialRoles[player.role] - 1
+			if tbl.potentialRoles[player.role] == 0 then
+				tbl.potentialRoles[player.role] = nil
+				tbl.potentialRoles.num = tbl.potentialRoles.num - 1
+			end
 		end
 	end
 
-	local iconList = getIconListOLD(numPlayers, displayData, iconOrder)
-	local iconIndex = numPlayers
-	for i = 1, #iconList do
-		self.Icons[iconIndex]:SetAtlas(iconList[i], false)
-		iconIndex = iconIndex - 1
+	player.assignedClass = class
+	player.icons.class = ICONS[class]
+	displayData[class] = displayData[class] - 1
+	for _, currPlayer in ipairs(displayData.players) do
+		if not currPlayer.isAssigned then 
+			currPlayer.potentialClasses[class] = player.potentialClasses[class] - 1
+			if currPlayer.potentialClasses[class] == 0 then
+				currPlayer.potentialClasses[class] = nil
+				currPlayer.potentialClasses.num = currPlayer.potentialClasses.num - 1
+			end
+		end
 	end
 
-	for i=1, iconIndex do
-		self.Icons[i]:SetAtlas("groupfinder-icon-emptyslot", false);
-	end
-end
-
-local function assignPlayer(displayData, player, role, class, class2)
-	player.role = ICONS[role]
-	displayData[role] = displayData[role] - 1
-	if class and not class2 then
-		player.class = ICONS[class]
-		player.class1 = false
-		player.class2 = false
-		displayData[class] = displayData[class] - 1
-	elseif class and class2 then
-		player.class = false
-		player.class1 = ICONS[class]
-		player.class2 = ICONS[class2]
-		displayData[class] = displayData[class] - 1
-	end
 end
 
 local function sort(players)
 	local newPlayers = {}
-	for i, role in ipairs(LFG_LIST_GROUP_DATA_ROLE_ORDER) do
+	for i, role in ipairs(ROLES) do
 		for j, player in ipairs(players) do
 			if player.role == ICONS[role] then
 				table.insert(newPlayers, player)
@@ -95,116 +137,164 @@ local function sort(players)
 	return newPlayers
 end
 
+local function getPotentialClassTable(displayData, role)
+	if not CLASSES_BY_ROLE[role] then
+		print(role)
+	end
+	local classes = {num = 0}
+	for class in pairs(CLASSES_BY_ROLE[role]) do
+		if displayData[class] > 0 then
+			classes.num = classes.num + 1
+			classes[class] = displayData[class]
+		end
+	end
+	return classes
+end
+
+local function getPotentialRoleTable(displayData, class)
+	local roles = {num = 0}
+	for role in pairs(ALL_CLASSES[class]) do
+		if displayData[role] > 0 then
+			roles.num = roles.num + 1
+			roles[role] = displayData[role]
+		end
+	end
+	return roles
+end
+
+local function getClassesAsList(classes)
+	local list = {}
+	for class in pairs(classes) do
+		if class ~= "num" then
+			table.insert(list, class)
+		end
+	end
+	return list
+end
+
+local function getNumUnassigned(players)
+	local num = 0
+	for _, player in pairs(players) do
+		if not players.isAssigned then
+			num = num + 1
+		end
+	end
+	return num
+end
+
+local function getPotentialPlayerClasses(displayData, role)
+	local tbl = {}
+	for class, numClass in pairs(displayData) do
+		if ALL_CLASSES[class] and ALL_CLASSES[class][role] then
+			for i = 1, numClass do
+				table.insert(tbl, class)
+			end
+		end
+	end
+	return tbl
+end
+
+local function iconListFromPlayers(players)
+	local iconList = {}
+	for i, player in ipairs(players) do
+		iconList[i] = player.icons
+	end
+	return iconList
+end
+
 local function getIconList(numPlayers, displayData)
-	local players = {}
+	local roleList = {}
+	for i, role in ipairs(ROLES) do
+		for j = 1, displayData[role] do
+			table.insert(roleList, role)
+		end
+	end
+
+	local freeClasses = {}
+	for class, classNum in pairs(displayData) do
+		if ALL_CLASSES[class] then
+			freeClasses[class] = {
+				count = classNum,
+				potentialRoles = getPotentialRoleTable(displayData, class),
+			}
+		end
+	end
+	displayData.freeClasses = freeClasses
+
+	local players = {
+		TANK = {},
+		HEALER = {},
+		DAMAGER = {},
+	}
 	for i = 1, numPlayers do
-		players[i] = {role = ICONS.MONK, class = false, class1 = false, class2 = false}
+		local role = roleList[i]
+		players[i] = {
+			icons = {
+				role = ICONS[role],
+				class = false,
+				class1 = false,
+				class2 = false,
+			},
+			role = role,
+			potentialClasses = getPotentialClassTable(displayData, role),
+			assignedClasses = {},
+			isAssigned = false
+		}
+		table.insert(players[role], players[i])
 	end
-	local numAssignedPlayers = 0
+	displayData.players = players
 
-	for class, _ in pairs(DPS_CLASSES) do
-		while displayData[class] > 0 do
-			numAssignedPlayers = numAssignedPlayers + 1
-			assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
-		end
-	end
 
-		
-
-	--assign classes that are completely determined
-
-	local changed = false
 	repeat
-		changed = false
-		local numPotentialTanks, numPotentialHealers, numPotentialDps = 0, 0, 0
-		local tanks, healers, dps = {}, {}, {}
-		for class, _ in pairs(TANK_CLASSES) do
-			numPotentialTanks = numPotentialTanks + displayData[class]
-			numPotentialDps = numPotentialDps + displayData[class]
-			tanks[class] = displayData[class]
-			dps[class] = displayData[class]
-		end
-		for class, _ in pairs(HEAL_CLASSES) do
-			numPotentialHealers = numPotentialHealers + displayData[class]
-			numPotentialDps = numPotentialDps + displayData[class]
-			healers[class] = displayData[class]
-			dps[class] = displayData[class]
-		end
-		for class, _ in pairs(MULTI_CLASSES) do
-			numPotentialTanks = numPotentialTanks + displayData[class]
-			numPotentialHealers = numPotentialHealers + displayData[class]
-			numPotentialDps = numPotentialDps + displayData[class]
-			tanks[class] = (tanks[class] or 0) + displayData[class]
-			healers[class] = displayData[class]
-			dps[class] = displayData[class]
-		end
-
-		if numPotentialTanks > 0 and numPotentialTanks == displayData.TANK then
-			for class, num in pairs(tanks) do
-				for i = 1, num do
-					numAssignedPlayers = numAssignedPlayers + 1
-					assignPlayer(displayData, players[numAssignedPlayers], "TANK", class)
+		hasAssigned = false
+		
+		if displayData.TANK == 0 then
+			for class, classTbl in pairs(freeClasses) do
+				if classTbl.potentialRoles.TANK then
+					classTbl.potentialRoles.TANK = nil
+					classTbl.potentialRoles.num = classTbl.potentialRoles.num - 1
 				end
 			end
-			changed = true
 		end
-		if numPotentialHealers > 0 and numPotentialHealers == displayData.HEALER then
-			for class, num in pairs(healers) do
-				for i = 1, num do
-					numAssignedPlayers = numAssignedPlayers + 1
-					assignPlayer(displayData, players[numAssignedPlayers], "HEALER", class)
+		if displayData.HEALER == 0 then
+			for class, classTbl in pairs(freeClasses) do
+				if classTbl.potentialRoles.HEALER then
+					classTbl.potentialRoles.HEALER = nil
+					classTbl.potentialRoles.num = classTbl.potentialRoles.num - 1
 				end
 			end
-			changed = true
 		end
-		if numPotentialDps > 0 and numPotentialDps == displayData.DAMAGER then
-			for class, num in pairs(dps) do
-				for i = 1, num do
-					numAssignedPlayers = numAssignedPlayers + 1
-					assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
+
+		for i, player in ipairs(players) do
+			if not player.isAssigned and player.potentialClasses.num == 1 then
+				assignClass(displayData, player, getClassesAsList(player.potentialClasses)[1])
+			end
+		end
+
+		for class, classTbl in pairs(freeClasses) do
+			if classTbl.potentialRoles.num == 1 then
+				for i = 1, classTbl.count do
+					for i, player in ipairs(players) do
+						if not player.isAssigned and classTbl.potentialRoles[player.role] and player.potentialClasses[class] then
+							assignClass(displayData, player, class)
+						end
+					end
 				end
 			end
-			changed = true
 		end
-	until not changed
 
-	
-	if displayData.HEALER == 0 then
-		for class, _ in pairs(HEAL_CLASSES) do
-			while displayData[class] > 0 do
-				numAssignedPlayers = numAssignedPlayers + 1
-				assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
+		for i, role in ipairs(ROLES) do
+			if displayData[role] > 0 and displayData[role] == #getPotentialPlayerClasses(displayData, role) then
+				local classList = getPotentialPlayerClasses(displayData, role)
+				for i, player in ipairs(players[role]) do
+					assignClass(displayData, player, classList[i])
+				end
 			end
 		end
-	end
-	if displayData.TANK == 0 then
-		for class, _ in pairs(TANK_CLASSES) do
-			while displayData[class] > 0 do
-				numAssignedPlayers = numAssignedPlayers + 1
-				assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
-			end
-		end
-	end
-	if displayData.HEALER == 0 and displayData.TANK == 0 then
-		for class, _ in pairs(MULTI_CLASSES) do
-			while displayData[class] > 0 do
-				numAssignedPlayers = numAssignedPlayers + 1
-				assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
-			end
-		end
-	end
 
-	--assign roles that could be one of two classes
+	until not hasAssigned
 
-
-	--assign remaining roles without classes
-	for _, class in ipairs({"TANK", "HEALER", "DAMAGER"}) do
-		for i = 1, displayData[class] do
-			numAssignedPlayers = numAssignedPlayers + 1
-			assignPlayer(displayData, players[numAssignedPlayers], class)
-		end
-	end
-	return sort(players)
+	return iconListFromPlayers(players)
 end
 
 local function updateRoleClassEnum(self, numPlayers, displayData, disabled)
@@ -326,41 +416,6 @@ local function LFGListSearchPanel_OnLoadHook(self)
 			print("-----")
 			DevTools_Dump(self.displayData)
 		end)
-
-
-
-		
-		
-		--[[enumPair.Role = CreateFrame("Frame", enumPair:GetName().."Role", enumPair, "LFGListGroupDataDisplayTemplate")
-		local roleEnum = enumPair.Role
-		roleEnum:SetPoint("RIGHT", enumPair, "RIGHT", 0, 7)
-		roleEnum:Show()
-		roleEnum.RoleCount:Hide()
-		roleEnum.PlayerCount:Hide()
-		roleEnum.Enumerate:Show()
-
-		enumPair.Class = CreateFrame("Frame", enumPair:GetName().."Class", enumPair, "LFGListGroupDataDisplayTemplate")
-		local classEnum = enumPair.Class
-		classEnum:SetPoint("RIGHT", enumPair, "RIGHT", 3, -7)
-		classEnum:Show()
-		classEnum.RoleCount:Hide()
-		classEnum.PlayerCount:Hide()
-		classEnum.Enumerate:Show()
-		for i = 1, 5 do
-			local texture = classEnum.Enumerate:CreateTexture(nil, "ARTWORK")
-			classEnum.Enumerate["Icon"..(i + 5)] = texture
-			classEnum.Enumerate.Icons[i + 5] = texture
-			texture:SetAtlas("groupfinder-icon-role-large-tank")
-		end
-		for i = 1, 10 do
-			local icon = classEnum.Enumerate.Icons[i]
-			icon:SetSize(9, 9)
-			if i == 1 then
-				icon:SetPoint("RIGHT", classEnum.Enumerate, "RIGHT", -12, 0)
-			else
-				icon:SetPoint("CENTER", classEnum.Enumerate.Icons[i - 1], "CENTER", -9, 0)
-			end
-		end]]
 	end
 end
 
