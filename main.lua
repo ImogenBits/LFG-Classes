@@ -1,6 +1,5 @@
 local ADDON_NAME, _ = ...
 
---constants
 local ROLE_ICON_SIZE = 18
 local CLASS_ICON_SIZE = 12
 local ICON_GROUP_SIZE = ROLE_ICON_SIZE + CLASS_ICON_SIZE / 2
@@ -32,7 +31,7 @@ local function getPlayerList(resultID)
 	return sort(playerList)
 end
 
-function LFGListGroupDataDisplayRoleClassEnum_Update(self, numPlayers, displayData, disabled)
+local function LFGListGroupDataDisplayRoleClassEnum_Update(self, numPlayers, displayData, disabled)
 	local resultID = self:GetParent():GetParent().resultID
 	--Show/hide the required icons
 	for i = 1, #self.iconGroups do
@@ -75,8 +74,6 @@ local function LFGListGroupDataDisplay_UpdateHook(self, activityID, displayData,
 		self.RoleClassEnum:Hide()
 	end
 end
-
-
 hooksecurefunc("LFGListGroupDataDisplay_Update", LFGListGroupDataDisplay_UpdateHook)
 
 for i, button in pairs({LFGListSearchPanelScrollFrameScrollChild:GetChildren()}) do
@@ -112,7 +109,7 @@ for i, button in pairs({LFGListSearchPanelScrollFrameScrollChild:GetChildren()})
 	end
 end
 
-
+--[[
 
 local eventFrame = CreateFrame("Frame", ADDON_NAME.."EventFrame", UIParent)
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -121,4 +118,4 @@ eventFrame:SetScript("OnEvent", function(self, ...)
 	GroupFinderFrameGroupButton4:Click()
 	LFGListCategorySelection_SelectCategory(LFGListFrame.CategorySelection, 2, 0)
 	--dLFGListFrame.CategorySelection.FindGroupButton:Click()
-end)
+end)]]
