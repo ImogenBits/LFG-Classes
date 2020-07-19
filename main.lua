@@ -100,14 +100,18 @@ local function getIconList(numPlayers, displayData)
 	for i = 1, numPlayers do
 		players[i] = {role = ICONS.MONK, class = false, class1 = false, class2 = false}
 	end
-
 	local numAssignedPlayers = 0
+
 	for class, _ in pairs(DPS_CLASSES) do
 		while displayData[class] > 0 do
 			numAssignedPlayers = numAssignedPlayers + 1
 			assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
 		end
 	end
+
+		
+
+	--assign classes that are completely determined
 
 	local changed = false
 	repeat
@@ -136,29 +140,75 @@ local function getIconList(numPlayers, displayData)
 		end
 
 		if numPotentialTanks > 0 and numPotentialTanks == displayData.TANK then
-			numAssignedPlayers = numAssignedPlayers + 1
-			local class, num = next(tanks)
-			assignPlayer(displayData, players[numAssignedPlayers], "TANK", class)
+			for class, num in pairs(tanks) do
+				for i = 1, num do
+					numAssignedPlayers = numAssignedPlayers + 1
+					assignPlayer(displayData, players[numAssignedPlayers], "TANK", class)
+				end
+			end
 			changed = true
 		end
 		if numPotentialHealers > 0 and numPotentialHealers == displayData.HEALER then
-			numAssignedPlayers = numAssignedPlayers + 1
-			local class, num = next(healers)
-			assignPlayer(displayData, players[numAssignedPlayers], "HEALER", class)
+			for class, num in pairs(healers) do
+				for i = 1, num do
+					numAssignedPlayers = numAssignedPlayers + 1
+					assignPlayer(displayData, players[numAssignedPlayers], "HEALER", class)
+				end
+			end
 			changed = true
 		end
 		if numPotentialDps > 0 and numPotentialDps == displayData.DAMAGER then
-			numAssignedPlayers = numAssignedPlayers + 1
-			local class, num = next(dps)
-			assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
+			for class, num in pairs(dps) do
+				for i = 1, num do
+					numAssignedPlayers = numAssignedPlayers + 1
+					assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
+				end
+			end
 			changed = true
 		end
 	until not changed
 
+	
+	if displayData.HEALER == 0 then
+		for class, _ in pairs(HEAL_CLASSES) do
+			while displayData[class] > 0 do
+				numAssignedPlayers = numAssignedPlayers + 1
+				assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
+			end
+		end
+	end
+	if displayData.TANK == 0 then
+		for class, _ in pairs(TANK_CLASSES) do
+			while displayData[class] > 0 do
+				numAssignedPlayers = numAssignedPlayers + 1
+				assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
+			end
+		end
+	end
+	if displayData.HEALER == 0 and displayData.TANK == 0 then
+		for class, _ in pairs(MULTI_CLASSES) do
+			while displayData[class] > 0 do
+				numAssignedPlayers = numAssignedPlayers + 1
+				assignPlayer(displayData, players[numAssignedPlayers], "DAMAGER", class)
+			end
+		end
+	end
+
+	--assign roles that could be one of two classes
+
+
+	--assign remaining roles without classes
+	for _, class in ipairs({"TANK", "HEALER", "DAMAGER"}) do
+		for i = 1, displayData[class] do
+			numAssignedPlayers = numAssignedPlayers + 1
+			assignPlayer(displayData, players[numAssignedPlayers], class)
+		end
+	end
 	return sort(players)
 end
 
 local function updateRoleClassEnum(self, numPlayers, displayData, disabled)
+
 	--Show/hide the required icons
 	for i = 1, #self.iconGroups do
 		local group = self.iconGroups[i]
@@ -205,6 +255,8 @@ local function updateRoleClassEnum(self, numPlayers, displayData, disabled)
 		self.iconGroups[i].class1:Hide()
 		self.iconGroups[i].class2:Hide()
 	end
+	--! DEBUG info
+	self.displayData = displayData
 end
 
 local function LFGListGroupDataDisplay_UpdateHook(self, activityID, displayData, disabled)
@@ -269,6 +321,11 @@ local function LFGListSearchPanel_OnLoadHook(self)
 			classIcon2:Hide()
 			table.insert(iconGroup.icons, class2Icon)
 		end
+
+		enum:SetScript("OnEnter", function(self, ...)
+			print("-----")
+			DevTools_Dump(self.displayData)
+		end)
 
 
 
