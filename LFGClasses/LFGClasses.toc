@@ -1,6 +1,8 @@
 ## Interface: 90001
 ## Title: LFG Classes
+## Notes: Shows class icons of the group members in the LFG frame.
 ## Author: Imogen Bits
+
 ## SavedVariables: LFGClasses
 
-LFG_Classes.lua
+LFGClasses.lua
