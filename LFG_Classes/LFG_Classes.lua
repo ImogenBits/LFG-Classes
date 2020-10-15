@@ -137,5 +137,3 @@ eventFrame:HookScript("OnEvent", function(self, event, ...)
 		end
 	end
 end)
-
-

@@ -3,4 +3,4 @@
 ## Author: Imogen Bits
 ## SavedVariables: LFGClasses
 
-main.lua
+LFG_Classes.lua
