@@ -1,7 +1,7 @@
 package-as: LFGClasses
 
-move-folders:
-  LFGClasses/LFGClasses: LFGClasses
-
 ignore:
   - README.md
+
+move-folders:
+  LFGClasses/LFGClasses: LFGClasses
