@@ -7,8 +7,10 @@ name: Package and release
 # other branches or even pullrequests.
 on:
   push:
+    branches:
+      - master
     tags:
-      - '**'
+      - 'releas*'
 
 # a workflow is built up as jobs, and within these jobs are steps
 jobs:
