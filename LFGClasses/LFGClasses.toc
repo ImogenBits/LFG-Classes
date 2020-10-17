@@ -2,6 +2,7 @@
 ## Title: LFG Classes
 ## Notes: Shows class icons of the group members in the LFG frame.
 ## Author: Imogen Bits
+## X-Curse-Project-ID: 413502
 
 ## SavedVariables: LFGClasses
 
