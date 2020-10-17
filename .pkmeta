@@ -1,1 +1,4 @@
 package-as: LFGClasses
+
+move-folders:
+  LFGClasses/LFGClasses: LFGClasses
