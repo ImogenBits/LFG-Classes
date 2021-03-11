@@ -10,7 +10,7 @@ on:
     branches:
       - master
     tags:
-      - 'releas*'
+      - 'release*'
 
 # a workflow is built up as jobs, and within these jobs are steps
 jobs:

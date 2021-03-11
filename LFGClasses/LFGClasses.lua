@@ -89,36 +89,38 @@ hooksecurefunc("LFGListGroupDataDisplay_Update", LFGListGroupDataDisplay_UpdateH
 
 local function initialize()
 	for i, button in pairs({LFGListSearchPanelScrollFrameScrollChild:GetChildren()}) do
-		button.DataDisplay.RoleClassEnum =  CreateFrame("Frame", nil, button.DataDisplay)
-		local enum = button.DataDisplay.RoleClassEnum
-		enum:SetAllPoints(button.DataDisplay)
+        if button.DataDisplay then
+            button.DataDisplay.RoleClassEnum =  CreateFrame("Frame", nil, button.DataDisplay)
+            local enum = button.DataDisplay.RoleClassEnum
+            enum:SetAllPoints(button.DataDisplay)
 
-		enum.iconGroups = {}
-		for i = 1, 5 do
-			enum.iconGroups[i] = CreateFrame("Frame", nil, enum)
-			local iconGroup = enum.iconGroups[i]
-			iconGroup:SetSize(LFGClasses.ICON_GROUP_SIZE, LFGClasses.ICON_GROUP_SIZE)
-			if i == 1 then
-				iconGroup:SetPoint("RIGHT", enum, "RIGHT", 0, 0)
-			else
-				iconGroup:SetPoint("CENTER", enum.iconGroups[i - 1], "CENTER", -1 * LFGClasses.ICON_GROUP_SIZE, 0)
-			end
-			iconGroup.icons = {}
+            enum.iconGroups = {}
+            for i = 1, 5 do
+                enum.iconGroups[i] = CreateFrame("Frame", nil, enum)
+                local iconGroup = enum.iconGroups[i]
+                iconGroup:SetSize(LFGClasses.ICON_GROUP_SIZE, LFGClasses.ICON_GROUP_SIZE)
+                if i == 1 then
+                    iconGroup:SetPoint("RIGHT", enum, "RIGHT", 0, 0)
+                else
+                    iconGroup:SetPoint("CENTER", enum.iconGroups[i - 1], "CENTER", -1 * LFGClasses.ICON_GROUP_SIZE, 0)
+                end
+                iconGroup.icons = {}
 
-			iconGroup.role = iconGroup:CreateTexture(nil, "ARTWORK")
-			local roleIcon = iconGroup.role
-			roleIcon:SetSize(LFGClasses.ROLE_ICON_SIZE, LFGClasses.ROLE_ICON_SIZE)
-			roleIcon:SetPoint("TOP", iconGroup, "TOP", 0, 0)
-			roleIcon:SetAtlas("groupfinder-icon-role-large-tank")
-			table.insert(iconGroup.icons, roleIcon)
+                iconGroup.role = iconGroup:CreateTexture(nil, "ARTWORK")
+                local roleIcon = iconGroup.role
+                roleIcon:SetSize(LFGClasses.ROLE_ICON_SIZE, LFGClasses.ROLE_ICON_SIZE)
+                roleIcon:SetPoint("TOP", iconGroup, "TOP", 0, 0)
+                roleIcon:SetAtlas("groupfinder-icon-role-large-tank")
+                table.insert(iconGroup.icons, roleIcon)
 
-			iconGroup.class = iconGroup:CreateTexture(nil, "ARTWORK")
-			local classIcon = iconGroup.class
-			classIcon:SetSize(LFGClasses.CLASS_ICON_SIZE, LFGClasses.CLASS_ICON_SIZE)
-			classIcon:SetPoint("BOTTOMRIGHT", iconGroup, "BOTTOMRIGHT", 0, 0)
-			classIcon:SetAtlas("groupfinder-icon-role-large-tank")
-			table.insert(iconGroup.icons, classIcon)
-		end
+                iconGroup.class = iconGroup:CreateTexture(nil, "ARTWORK")
+                local classIcon = iconGroup.class
+                classIcon:SetSize(LFGClasses.CLASS_ICON_SIZE, LFGClasses.CLASS_ICON_SIZE)
+                classIcon:SetPoint("BOTTOMRIGHT", iconGroup, "BOTTOMRIGHT", 0, 0)
+                classIcon:SetAtlas("groupfinder-icon-role-large-tank")
+                table.insert(iconGroup.icons, classIcon)
+            end
+        end
 	end
 end
 
