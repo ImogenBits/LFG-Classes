@@ -77,7 +77,7 @@ local function LFGListGroupDataDisplay_UpdateHook(self, activityID, displayData,
 	end
 
 	local info = C_LFGList.GetActivityInfoTable(activityID)
-	if (info.displayType == LE_LFG_LIST_DISPLAY_TYPE_ROLE_ENUMERATE) then
+	if (info.displayType == Enum.LFGListDisplayType.RoleEnumerate) then
 		self.Enumerate:Hide()
 		self.RoleClassEnum:Show()
 		LFGListGroupDataDisplayRoleClassEnum_Update(self.RoleClassEnum, info.maxNumPlayers, displayData, disabled)
