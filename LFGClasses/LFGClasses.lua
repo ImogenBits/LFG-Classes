@@ -6,6 +6,7 @@ LFGClasses = {
 
 
 local ICONS = LFG_LIST_GROUP_DATA_ATLASES
+ICONS["EVOKER"] = "classicon-evoker"
 local ROLES = LFG_LIST_GROUP_DATA_ROLE_ORDER
 
 local eventFrame = CreateFrame("Frame", ADDON_NAME.."EventFrame", UIParent)
