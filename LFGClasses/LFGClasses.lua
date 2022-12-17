@@ -88,7 +88,7 @@ end
 hooksecurefunc("LFGListGroupDataDisplay_Update", LFGListGroupDataDisplay_UpdateHook)
 
 local function initialize()
-	for i, button in pairs({LFGListSearchPanelScrollFrameScrollChild:GetChildren()}) do
+	for i, button in pairs({LFGListFrame.SearchPanel.ScrollBox.ScrollTarget:GetChildren()}) do
         if button.DataDisplay then
             button.DataDisplay.RoleClassEnum =  CreateFrame("Frame", nil, button.DataDisplay)
             local enum = button.DataDisplay.RoleClassEnum
