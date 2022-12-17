@@ -1,12 +1,8 @@
 local ADDON_NAME, _ = ...
 
 LFGClasses = {
-	isDebug = false,
-	roleDisplay = "icons",
-	ROLE_ICON_SIZE = 18,
 	CLASS_ICON_SIZE = 12,
 }
-LFGClasses.ICON_GROUP_SIZE = LFGClasses.ROLE_ICON_SIZE + LFGClasses.CLASS_ICON_SIZE / 2
 
 
 local ICONS = LFG_LIST_GROUP_DATA_ATLASES
@@ -14,128 +10,72 @@ local ROLES = LFG_LIST_GROUP_DATA_ROLE_ORDER
 
 local eventFrame = CreateFrame("Frame", ADDON_NAME.."EventFrame", UIParent)
 
-local function sort(players)
-	local newPlayers = {}
-	for i, role in ipairs(ROLES) do
-		for j, player in ipairs(players) do
-			if player.role == ICONS[role] then
-				table.insert(newPlayers, player)
-			end
-		end
-	end
-	return newPlayers
-end
 
-local function getPlayerList(resultID)
-	local playerList = {}
-	local i = 1
-	local playerRole, playerClass = C_LFGList.GetSearchResultMemberInfo(resultID, i)
-	while playerRole do
-		playerList[i] = {role = ICONS[playerRole], class = ICONS[playerClass]}
-		i = i + 1
-		playerRole, playerClass = C_LFGList.GetSearchResultMemberInfo(resultID, i)
-	end
-	return sort(playerList)
-end
+local function getClassList(resultID)
+    local searchResultInfo = C_LFGList.GetSearchResultInfo(resultID)
+    local players = {}
+    for i = 1, searchResultInfo.numMembers do
+        local role, class = C_LFGList.GetSearchResultMemberInfo(resultID, i)
+        tinsert(players, {role = role, class = class})
+    end
 
-local function LFGListGroupDataDisplayRoleClassEnum_Update(self, numPlayers, displayData, disabled)
-	local resultID = self:GetParent():GetParent().resultID
-	--Show/hide the required icons
-	for i = 1, #self.iconGroups do
-		local group = self.iconGroups[i]
-		if ( i > numPlayers ) then
-			group:Hide()
-		else
-			group:Show()
-			group.role:Show()
-			group.class:Show()
-			group:SetAlpha(disabled and 0.5 or 1.0)
-			for j = 1, #group.icons do
-				group.icons[j]:SetDesaturated(disabled)
-			end
-		end
-	end
-
-	local iconList = getPlayerList(resultID)
-	local iconIndex = numPlayers
-	for i = 1, #iconList do
-		local group, icons = self.iconGroups[iconIndex], iconList[i]
-		group.role:SetAtlas(icons.role, false)
-		group.class:SetAtlas(icons.class, false)
-		iconIndex = iconIndex - 1
-	end
-
-	for i=1, iconIndex do
-		self.iconGroups[i].role:SetAtlas("groupfinder-icon-emptyslot", false)
-		self.iconGroups[i].class:Hide()
-	end
-end
-
-local function LFGListGroupDataDisplay_UpdateHook(self, activityID, displayData, disabled)
-	if not self.RoleClassEnum then
-		return
-	end
-
-	local info = C_LFGList.GetActivityInfoTable(activityID)
-	if (info.displayType == Enum.LFGListDisplayType.RoleEnumerate) then
-		self.Enumerate:Hide()
-		self.RoleClassEnum:Show()
-		LFGListGroupDataDisplayRoleClassEnum_Update(self.RoleClassEnum, info.maxNumPlayers, displayData, disabled)
-	else
-		self.RoleClassEnum:Hide()
-	end
-end
-hooksecurefunc("LFGListGroupDataDisplay_Update", LFGListGroupDataDisplay_UpdateHook)
-
-local function initialize()
-	for i, button in pairs({LFGListFrame.SearchPanel.ScrollBox.ScrollTarget:GetChildren()}) do
-        if button.DataDisplay then
-            button.DataDisplay.RoleClassEnum =  CreateFrame("Frame", nil, button.DataDisplay)
-            local enum = button.DataDisplay.RoleClassEnum
-            enum:SetAllPoints(button.DataDisplay)
-
-            enum.iconGroups = {}
-            for i = 1, 5 do
-                enum.iconGroups[i] = CreateFrame("Frame", nil, enum)
-                local iconGroup = enum.iconGroups[i]
-                iconGroup:SetSize(LFGClasses.ICON_GROUP_SIZE, LFGClasses.ICON_GROUP_SIZE)
-                if i == 1 then
-                    iconGroup:SetPoint("RIGHT", enum, "RIGHT", 0, 0)
-                else
-                    iconGroup:SetPoint("CENTER", enum.iconGroups[i - 1], "CENTER", -1 * LFGClasses.ICON_GROUP_SIZE, 0)
-                end
-                iconGroup.icons = {}
-
-                iconGroup.role = iconGroup:CreateTexture(nil, "ARTWORK")
-                local roleIcon = iconGroup.role
-                roleIcon:SetSize(LFGClasses.ROLE_ICON_SIZE, LFGClasses.ROLE_ICON_SIZE)
-                roleIcon:SetPoint("TOP", iconGroup, "TOP", 0, 0)
-                roleIcon:SetAtlas("groupfinder-icon-role-large-tank")
-                table.insert(iconGroup.icons, roleIcon)
-
-                iconGroup.class = iconGroup:CreateTexture(nil, "ARTWORK")
-                local classIcon = iconGroup.class
-                classIcon:SetSize(LFGClasses.CLASS_ICON_SIZE, LFGClasses.CLASS_ICON_SIZE)
-                classIcon:SetPoint("BOTTOMRIGHT", iconGroup, "BOTTOMRIGHT", 0, 0)
-                classIcon:SetAtlas("groupfinder-icon-role-large-tank")
-                table.insert(iconGroup.icons, classIcon)
+    local sorted = {}
+    for _, role in ipairs(ROLES) do
+        for _, player in ipairs(players) do
+            if player.role == role then
+                tinsert(sorted, ICONS[player.class])
             end
         end
-	end
+    end
+
+    return sorted
 end
+
+local function update(self, numPlayers, displayData, disabled, iconOrder)
+    if iconOrder == LFG_LIST_GROUP_DATA_ROLE_ORDER then
+        if not self.ClassIcons then
+            self.ClassIcons = {}
+            for i = 1, 5 do
+                self.ClassIcons[i] = self:CreateTexture(nil, "ARTWORK")
+                self.ClassIcons[i]:SetSize(LFGClasses.CLASS_ICON_SIZE, LFGClasses.CLASS_ICON_SIZE)
+                self.ClassIcons[i]:SetPoint("CENTER", self.Icons[i], "BOTTOM", 0, 0)
+                self.ClassIcons[i]:SetAtlas("groupfinder-icon-role-large-tank")
+            end
+        end
+
+        for i, icon in ipairs(self.ClassIcons) do
+            if i > numPlayers then
+                icon:Hide()
+            else
+                icon:Show()
+                icon:SetDesaturated(disabled)
+                icon:SetAlpha(disabled and .5 or 1)
+            end
+        end
+
+        local classes = getClassList(self:GetParent():GetParent().resultID)
+        local iconIndex = numPlayers
+        for i = 1, #classes do
+            self.ClassIcons[iconIndex]:SetAtlas(classes[i], false)
+            iconIndex = iconIndex - 1
+        end
+
+        for i = 1, iconIndex do
+            self.ClassIcons[i]:Hide()
+        end
+    else
+        if self.ClassIcons then
+            for _, icon in ipairs(self.ClassIcons) do
+                icon:Hide()
+            end
+        end
+    end
+end
+
 
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:HookScript("OnEvent", function(self, event, ...)
 	if event == "ADDON_LOADED" and ... == ADDON_NAME then
-		initialize()
-		if LFGClasses.isDebug then
-			eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-			eventFrame:SetScript("OnEvent", function(self, ...)
-				PVEFrame_ToggleFrame("GroupFinderFrame")
-				GroupFinderFrameGroupButton4:Click()
-				LFGListCategorySelection_SelectCategory(LFGListFrame.CategorySelection, 2, 0)
-				--dLFGListFrame.CategorySelection.FindGroupButton:Click()
-			end)
-		end
+		hooksecurefunc("LFGListGroupDataDisplayEnumerate_Update", update)
 	end
 end)
