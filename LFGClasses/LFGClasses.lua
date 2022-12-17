@@ -34,6 +34,10 @@ end
 
 local function update(self, numPlayers, displayData, disabled, iconOrder)
     if iconOrder == LFG_LIST_GROUP_DATA_ROLE_ORDER then
+        local resultID = self:GetParent():GetParent().resultID
+        if not resultID then
+            return
+        end
         if not self.ClassIcons then
             self.ClassIcons = {}
             for i = 1, 5 do
@@ -54,7 +58,7 @@ local function update(self, numPlayers, displayData, disabled, iconOrder)
             end
         end
 
-        local classes = getClassList(self:GetParent():GetParent().resultID)
+        local classes = getClassList(resultID)
         local iconIndex = numPlayers
         for i = 1, #classes do
             self.ClassIcons[iconIndex]:SetAtlas(classes[i], false)
